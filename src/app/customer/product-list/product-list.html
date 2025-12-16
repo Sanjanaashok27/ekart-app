@@ -1,0 +1,22 @@
+<h2>Product List</h2>
+
+<div *ngIf="loading">Loading products...</div>
+<div *ngIf="error" class="error">{{ error }}</div>
+<div >
+  <div *ngIf="products.length === 0">No products found.</div>
+
+  <div class="product-grid">
+    <div *ngFor="let product of products" class="card">
+      <img [src]="product.image || product.thumbnail || ''" alt="{{ product.title || product.name }}" class="card-image" />
+      <div class="card-body">
+        <div class="card-top">
+          <span class="department">{{ product.category || product.department || 'General' }}</span>
+          <span class="price">${{ product.price }}</span>
+        </div>
+        <h3 class="card-title">{{ product.title || product.name }}</h3>
+        <p class="card-desc">{{ product.description }}</p>
+      </div>
+    </div>
+  </div>
+
+</div>

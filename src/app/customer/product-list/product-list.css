@@ -1,0 +1,66 @@
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.04);
+}
+
+.card-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  background: #f4f4f4;
+}
+
+.card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: #666;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 16px;
+  color: #222;
+}
+
+.card-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #444;
+}
+
+.price {
+  color: #0b6e3a;
+  font-weight: 600;
+}
+
+.department {
+  background: #eef6ff;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #1e6fc1;
+}
+
+.error {
+  color: #c53030;
+}

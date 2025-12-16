@@ -1,0 +1,17 @@
+.customer-page{
+    align-items: center;
+    background: #f7f8fb;
+
+    display: flex;
+    flex-direction: column;
+}
+.view-products {
+    margin-top: 16px;
+    padding: 10px 16px;
+    font-size: 14px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
