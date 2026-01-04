@@ -1,22 +1,81 @@
-<h2>Product List</h2>
 
-<div *ngIf="loading">Loading products...</div>
-<div *ngIf="error" class="error">{{ error }}</div>
-<div >
-  <div *ngIf="products.length === 0">No products found.</div>
+<h2 class="page-title">Product List</h2>
 
-  <div class="product-grid">
-    <div *ngFor="let product of products" class="card">
-      <img [src]="product.image || product.thumbnail || ''" alt="{{ product.title || product.name }}" class="card-image" />
-      <div class="card-body">
-        <div class="card-top">
-          <span class="department">{{ product.category || product.department || 'General' }}</span>
-          <span class="price">${{ product.price }}</span>
-        </div>
-        <h3 class="card-title">{{ product.title || product.name }}</h3>
-        <p class="card-desc">{{ product.description }}</p>
+<div class="catalog-panel">
+  <div class="catalog">
+    <aside class="sidebar">
+      <div class="sidebar-header">Popular searches</div>
+      <div class="dept-list">
+        <button
+          class="dept"
+          *ngFor="let c of categories"
+          [class.active]="selectedCategory === c"
+          (click)="selectedCategory = c; onCategoryChange()"
+        >
+          {{ c }}
+        </button>
       </div>
-    </div>
-  </div>
+    </aside>
 
+    <section class="content">
+      <div class="searchbar">
+        <div class="search-input">
+          <input
+            type="search"
+            placeholder="Search..."
+            [(ngModel)]="searchText"
+            (input)="onSearch()"
+          />
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <div class="toolbar-left"></div>
+        <div class="toolbar-right">
+          <select [(ngModel)]="sortDir" (change)="onSortChange()">
+            <option value="asc">Price: Low to High</option>
+            <option value="desc">Price: High to Low</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-title">Current highlights</div>
+
+      <div *ngIf="pagedProducts.length > 0" class="product-grid">
+        <div *ngFor="let product of pagedProducts" class="card">
+          <img
+            [src]="product.image || product.thumbnail || ''"
+            alt="{{ product.title || product.name }}"
+            class="card-image"
+          />
+          <div class="card-body">
+            <div class="card-top">
+              <span class="department">
+                {{ product.category || product.department || 'General' }}
+              </span>
+              <span class="price">
+                ${{ product.price }}
+              </span>
+            </div>
+            <h3 class="card-title">{{ product.title || product.name }}</h3>
+            <p class="card-desc">{{ product.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="pagedProducts.length === 0" class="empty-state">No products found.</div>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button (click)="prevPage()" [disabled]="currentPage === 1">Prev</button>
+        <button
+          *ngFor="let p of [].constructor(totalPages); let i = index"
+          (click)="goToPage(i + 1)"
+          [class.active]="currentPage === (i + 1)"
+        >
+          {{ i + 1 }}
+        </button>
+        <button (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+      </div>
+    </section>
+  </div>
 </div>

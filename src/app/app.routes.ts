@@ -3,7 +3,8 @@ import { Routes } from '@angular/router';
 // import { Customer } from './customer/customer';
 
 export const routes: Routes = [
-    {path: '', redirectTo: 'login', pathMatch: 'full' },
+    {path: '', redirectTo: 'landing', pathMatch: 'full' },
+    {path: 'landing', loadComponent: () => import('./landing/landing').then(m => m.Landing) },
     {path: 'login', loadComponent: () => import('./login/login').then(m => m.Login) },
  
   {path:'admin', loadComponent: () => import('./admin/admin').then(m => m.Admin) },

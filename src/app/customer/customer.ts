@@ -10,10 +10,10 @@ import { ProductList } from './product-list/product-list';
   styleUrls: ['./customer.css'],
 })
 export class Customer {
-  showProducts = false;
+  // showProducts = false;
 
-  toggleProducts() {
-    this.showProducts = !this.showProducts;
-  }
+  // toggleProducts() {
+  //   this.showProducts = !this.showProducts;
+  // }
 
 }

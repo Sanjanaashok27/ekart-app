@@ -1,9 +1,8 @@
 <div class="customer-page">
     <h2>Welcome, Customer!</h2>
     <p>Browse and shop for your favorite products.</p>
-    <button class="view-products" (click)="toggleProducts()">View Products</button>
+    <!-- <button class="view-products" (click)="showProducts=true">View Products</button> -->
 </div>
 
-<div *ngIf="showProducts">
-    <app-product-list></app-product-list>
-</div>
+    <app-product-list ></app-product-list>
+
