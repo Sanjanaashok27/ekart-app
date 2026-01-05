@@ -1,1 +1,73 @@
-<p>admin works!</p>
+
+<h3>Admin Dashboard </h3>
+
+<form (ngSubmit)="addProduct()">
+  <label>
+    Name
+    <input [(ngModel)]="name" name="name" />
+  </label>
+  <label>
+    Price (₹)
+    <input type="number" [(ngModel)]="price" name="price" />
+  </label>
+  <label>
+    Category
+    <input [(ngModel)]="category" name="category" />
+  </label>
+  <label>
+    Description
+    <input [(ngModel)]="description" name="description" />
+  </label>
+  <button type="submit">Add</button>
+</form>
+
+<h4>Product List (Local)</h4>
+<table>
+  <thead>
+    <tr><th>Name</th><th>Price (₹)</th><th>Category</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let p of products">
+      <td>{{ p.name }}</td>
+      <td>{{ p.price }}</td>
+      <td>{{ p.category || 'General' }}</td>
+      <td>
+        <button (click)="editProduct(p)">Edit</button>
+        <button (click)="deleteProduct(p.id)">Delete</button>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<div *ngIf="editing as e">
+  <h5>Edit Product</h5>
+  <label>Name <input [(ngModel)]="e.name" /></label>
+  <label>Price <input type="number" [(ngModel)]="e.price" /></label>
+  <label>Category <input [(ngModel)]="e.category" /></label>
+  <label>Description <input [(ngModel)]="e.description" /></label>
+  <button (click)="saveEdit()">Save</button>
+  <button (click)="editing=null">Cancel</button>
+</div>
+
+
+
+<!-- <h5 style="margin-top:20px;">All Products (API + Local)</h5>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Price (₹)</th>
+      <th>Category</th>
+      <th>Source</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let p of allProducts">
+      <td>{{ p.title || p.name }}</td>
+      <td>{{ p.price }}</td>
+      <td>{{ p.category || p.department || 'General' }}</td>
+      <td>{{ p.source | uppercase }}</td>
+    </tr>
+  </tbody>
+</table>
+ -->

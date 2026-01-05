@@ -60,6 +60,25 @@
             <h3 class="card-title">{{ product.title || product.name }}</h3>
             <p class="card-desc">{{ product.description }}</p>
           </div>
+
+          <div class="hover-details">
+            <div class="hd-top">
+              <span class="hd-dept">{{ product.category || product.department || 'General' }}</span>
+              <span class="hd-price">${{ product.price }}</span>
+            </div>
+            <div class="hd-title">{{ product.title || product.name }}</div>
+            <div class="hd-desc">{{ product.description }}</div>
+            <div class="hd-actions">
+              <a
+                class="hd-view-btn"
+                [href]="'/product/' + (product.id ?? product.productId ?? product.sku ?? '')"
+                (click)="!(product.id ?? product.productId ?? product.sku) ? $event.preventDefault() : null"
+                aria-label="View details of {{ product.title || product.name }}"
+              >
+                View details
+              </a>
+            </div>
+          </div>
         </div>
       </div>
 

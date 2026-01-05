@@ -1,0 +1,77 @@
+<div class="detail-wrap" *ngIf="product; else loadingState">
+  <div class="detail-header">
+    <a routerLink="/products" class="back-link">← Back</a>
+    <div class="header-main">
+      <span class="category-label">{{ categoryOf(product) }}</span>
+      <h1 class="detail-title">{{ titleOf(product) }}</h1>
+    </div>
+  </div>
+
+  <div class="detail-container">
+    <div class="detail-visuals">
+      <div class="image-box" *ngIf="hasImage(product)">
+        <img [src]="imageSrc(product)" [alt]="titleOf(product)" class="main-img" />
+      </div>
+    </div>
+
+    <div class="detail-content">
+      <div class="price-section">
+        <span class="currency">$</span>
+        <span class="price-value">{{ priceOf(product) }}</span>
+      </div>
+      
+      <p class="main-desc">{{ product.description }}</p>
+
+      <div class="specs-section">
+        <h3 class="specs-title">Product Specifications</h3>
+        <div class="specs-list">
+          <ng-template #render let-data>
+            <ng-container *ngIf="isArray(data); else objOrPrim">
+              <div class="spec-array">
+                <div *ngFor="let item of data; let i = index" class="spec-array-item">
+                  <span class="index-label">#{{ i + 1 }}</span>
+                  <ng-container *ngTemplateOutlet="render; context: { $implicit: item }"></ng-container>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #objOrPrim>
+              <ng-container *ngIf="isObject(data); else prim">
+                <div class="spec-object">
+                  <div class="spec-row" *ngFor="let kv of data | keyvalue">
+                    <ng-container *ngIf="
+                      kv.key !== 'id' && 
+                      kv.key !== 'image' && 
+                      kv.key !== 'thumbnail' && 
+                      kv.key !== '__v'
+                    ">
+                      <div class="spec-key">{{ formatKey(kv.key) }}</div>
+                      <div class="spec-value">
+                        <ng-container *ngTemplateOutlet="render; context: { $implicit: kv.value }"></ng-container>
+                      </div>
+                    </ng-container>
+                  </div>
+                </div>
+              </ng-container>
+            </ng-template>
+
+            <ng-template #prim>
+              <span class="spec-prim">{{ data }}</span>
+            </ng-template>
+          </ng-template>
+
+          <ng-container *ngTemplateOutlet="render; context: { $implicit: product }"></ng-container>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="add-to-cart-btn" (click)="addToCart(product)">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<ng-template #loadingState>
+  <div class="status-msg" *ngIf="!error">Loading product...</div>
+  <div class="status-msg error" *ngIf="error">{{ error }}</div>
+</ng-template>
