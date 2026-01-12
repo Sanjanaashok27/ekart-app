@@ -1,73 +1,114 @@
 
-<h3>Admin Dashboard </h3>
+<h3>Admin Dashboard</h3>
 
-<form (ngSubmit)="addProduct()">
-  <label>
-    Name
-    <input [(ngModel)]="name" name="name" />
-  </label>
-  <label>
-    Price (₹)
-    <input type="number" [(ngModel)]="price" name="price" />
-  </label>
-  <label>
-    Category
-    <input [(ngModel)]="category" name="category" />
-  </label>
-  <label>
-    Description
-    <input [(ngModel)]="description" name="description" />
-  </label>
-  <button type="submit">Add</button>
-</form>
+<button class="add-btn" (click)="openAdd()">+ Add Product</button>
 
-<h4>Product List (Local)</h4>
+<div *ngIf="showAddModal" class="modal-backdrop" (click)="closeAdd()"></div>
+<div *ngIf="showAddModal" class="modal-card" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+  <form (ngSubmit)="saveAdd()">
+    <h4>Add Product</h4>
+
+    <label>
+      Name
+      <input [(ngModel)]="addForm.name" name="add_name" />
+    </label>
+
+    <label>
+      Price (₹)
+      <input type="number" [(ngModel)]="addForm.price" name="add_price" />
+    </label>
+
+    <label>
+      Category
+      <input [(ngModel)]="addForm.category" name="add_category" />
+    </label>
+
+    <label>
+      Description
+      <input [(ngModel)]="addForm.description" name="add_description" />
+    </label>
+
+    <label class="file-label">
+      Image
+      <input type="file" accept="image/*" (change)="onImageSelected($event)" />
+    </label>
+
+    <div class="image-preview" *ngIf="addForm.image">
+      <img [src]="addForm.image" alt="Preview" />
+    </div>
+
+    <div class="modal-actions">
+      <button type="submit">Save</button>
+      <button type="button" (click)="closeAdd()">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<h4>Product List </h4>
+
+<div class="search-row">
+  <input
+    type="search"
+    placeholder="Search by name, category, description..."
+    [(ngModel)]="searchText"
+    (input)="onSearchInput()"
+  />Search Products
+</div>
+
 <table>
   <thead>
     <tr><th>Name</th><th>Price (₹)</th><th>Category</th><th>Actions</th></tr>
   </thead>
   <tbody>
-    <tr *ngFor="let p of products">
+    <tr *ngFor="let p of filteredProducts">
       <td>{{ p.name }}</td>
       <td>{{ p.price }}</td>
       <td>{{ p.category || 'General' }}</td>
       <td>
-        <button (click)="editProduct(p)">Edit</button>
+        <button (click)="openEdit(p)">Edit</button>
         <button (click)="deleteProduct(p.id)">Delete</button>
       </td>
     </tr>
   </tbody>
 </table>
 
-<div *ngIf="editing as e">
-  <h5>Edit Product</h5>
-  <label>Name <input [(ngModel)]="e.name" /></label>
-  <label>Price <input type="number" [(ngModel)]="e.price" /></label>
-  <label>Category <input [(ngModel)]="e.category" /></label>
-  <label>Description <input [(ngModel)]="e.description" /></label>
-  <button (click)="saveEdit()">Save</button>
-  <button (click)="editing=null">Cancel</button>
+<div *ngIf="showEditModal" class="modal-backdrop" (click)="closeEdit()"></div>
+<div *ngIf="showEditModal" class="modal-card" role="dialog" aria-modal="true" (click)="$event.stopPropagation()">
+  <form (ngSubmit)="saveEdit()">
+    <h4>Edit Product</h4>
+
+    <label>
+      Name
+      <input [(ngModel)]="editing!.name" name="edit_name" />
+    </label>
+
+    <label>
+      Price (₹)
+      <input type="number" [(ngModel)]="editing!.price" name="edit_price" />
+    </label>
+
+    <label>
+      Category
+      <input [(ngModel)]="editing!.category" name="edit_category" />
+    </label>
+
+    <label>
+      Description
+      <input [(ngModel)]="editing!.description" name="edit_description" />
+    </label>
+
+    <label class="file-label">
+      Image
+      <input type="file" accept="image/*" (change)="onEditImageSelected($event)" />
+    </label>
+
+    <div class="image-preview" *ngIf="editing?.image">
+      <img [src]="editing?.image" alt="Preview" />
+    </div>
+
+    <div class="modal-actions">
+      <button type="submit">Save</button>
+      <button type="button" (click)="closeEdit()">Cancel</button>
+    </div>
+  </form>
 </div>
-
-
-
-<!-- <h5 style="margin-top:20px;">All Products (API + Local)</h5>
-<table>
-  <thead>
-    <tr>
-      <th>Name</th>
-      <th>Price (₹)</th>
-      <th>Category</th>
-      <th>Source</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let p of allProducts">
-      <td>{{ p.title || p.name }}</td>
-      <td>{{ p.price }}</td>
-      <td>{{ p.category || p.department || 'General' }}</td>
-      <td>{{ p.source | uppercase }}</td>
-    </tr>
-  </tbody>
-</table>
- -->

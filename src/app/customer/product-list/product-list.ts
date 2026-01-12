@@ -1,6 +1,7 @@
 
 import { HttpClient } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { HttpClientModule } from '@angular/common/http';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../services/product.service';
@@ -9,24 +10,29 @@ import { Product } from '../../models/product';
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './product-list.html',
   styleUrls: ['./product-list.css']
 })
-export class ProductList implements OnInit {
+export class ProductList implements OnInit, OnDestroy {
   products: Product[] = [];
   filteredProducts: Product[] = [];
-  pagedProducts: Product[] = [];
+  visibleProducts: Product[] = [];
 
   searchText = '';
   selectedCategory = 'all';
   sortDir: 'asc' | 'desc' = 'asc';
-
   categories: string[] = [];
-  currentPage = 1;
-  itemsPerPage = 8;
 
-  private apiItems: Product[] = [];
+  private localItems: Product[] = [];
+  private batchSize = 16;
+
+  private nextIndex = 0;
+  private endReached = false;
+
+  private isLoading = false;
+  private lastTick = 0;
+  private throttleMs = 120;
 
   constructor(
     private http: HttpClient,
@@ -34,45 +40,41 @@ export class ProductList implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadApi();
-    this.productService.products$.subscribe(() => this.recombine());
-  }
-
-  private loadApi(): void {
-    this.http.get<any[]>('https://api.mydummyapi.com/categories/products').subscribe({
+    this.http.get<any[]>('/products.json').subscribe({
       next: (res) => {
-        this.apiItems = (res ?? []).map((item, idx): Product => ({
-          id: item.id ?? `api-${idx}`,
-          title: item.title,
-          name: item.name,
+        this.localItems = (res ?? []).map((item, idx): Product => ({
+          id: item.id ?? `local-${idx}`,
+          title: item.title ?? item.name ?? '',
+          name: item.name ?? item.title ?? '',
           price: Number(item.price ?? 0),
-          category: item.category,
-          department: item.department,
-          description: item.description,
-          image: item.image,
-          thumbnail: item.thumbnail,
-          productId: item.productId,
-          sku: item.sku,
-          source: 'api'
+          category: item.category ?? item.department ?? '',
+          department: item.department ?? item.category ?? '',
+          description: item.description ?? '',
+          image: item.image ?? item.thumbnail ?? '',
+          thumbnail: item.thumbnail ?? item.image ?? '',
+          productId: item.productId ?? '',
+          sku: item.sku ?? '',
+          source: 'local'
         }));
         this.recombine();
       },
       error: () => {
-        this.apiItems = [];
+        this.localItems = [];
         this.recombine();
       }
     });
+
+    this.productService.products$.subscribe(() => this.recombine());
   }
 
-  private recombine(): void {
-    const localItems = this.productService.getAll(); // returns Product[]
-    this.products = [...this.apiItems, ...localItems];
+  ngOnDestroy(): void {}
 
+  private recombine(): void {
+    const serviceItems = this.productService.getAll();
+    this.products = [...this.localItems, ...serviceItems];
     this.filteredProducts = [...this.products];
     this.categories = this.getDistinctCategories(this.products);
-
-    this.currentPage = 1;
-    this.updatePagedData();
+    this.resetInfinite();
   }
 
   onSearch(): void {
@@ -82,49 +84,15 @@ export class ProductList implements OnInit {
       (p.category ?? p.department ?? '').toLowerCase().includes(q) ||
       (p.description ?? '').toLowerCase().includes(q)
     );
-    this.currentPage = 1;
-    this.updatePagedData();
+    this.resetInfinite();
   }
 
   onCategoryChange(): void {
-    this.currentPage = 1;
-    this.updatePagedData();
+    this.resetInfinite();
   }
 
   onSortChange(): void {
-    this.currentPage = 1;
-    this.updatePagedData();
-  }
-
-  updatePagedData(): void {
-    const base = this.applyFilters(this.filteredProducts, this.selectedCategory, this.sortDir);
-    const start = (this.currentPage - 1) * this.itemsPerPage;
-    const end = start + this.itemsPerPage;
-    this.pagedProducts = base.slice(start, end);
-  }
-
-  goToPage(page: number): void {
-    this.currentPage = page;
-    this.updatePagedData();
-  }
-
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.updatePagedData();
-    }
-  }
-
-  prevPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.updatePagedData();
-    }
-  }
-
-  get totalPages(): number {
-    const base = this.applyFilters(this.filteredProducts, this.selectedCategory, this.sortDir);
-    return Math.ceil(base.length / this.itemsPerPage) || 1;
+    this.resetInfinite();
   }
 
   private applyFilters(items: Product[], category: string, dir: 'asc' | 'desc'): Product[] {
@@ -149,4 +117,52 @@ export class ProductList implements OnInit {
     });
     return ['all', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
   }
+
+  private resetInfinite(): void {
+    const base = this.applyFilters(this.filteredProducts, this.selectedCategory, this.sortDir);
+    this.visibleProducts = [];
+    this.nextIndex = 0;
+    this.endReached = base.length === 0;
+
+    if (!this.endReached) {
+      const firstPage = base.slice(this.nextIndex, this.nextIndex + this.batchSize);
+      this.visibleProducts = firstPage;
+      this.nextIndex += firstPage.length;
+      this.endReached = this.nextIndex >= base.length;
+    }
+  }
+
+  private loadMore(base: Product[]): void {
+    if (this.isLoading || this.endReached) return;
+    if (base.length === 0) return;
+
+    this.isLoading = true;
+    const nextChunk = base.slice(this.nextIndex, this.nextIndex + this.batchSize);
+    if (nextChunk.length > 0) {
+      this.visibleProducts = [...this.visibleProducts, ...nextChunk];
+      this.nextIndex += nextChunk.length;
+      this.endReached = this.nextIndex >= base.length;
+    } else {
+      this.endReached = true;
+    }
+    this.isLoading = false;
+  }
+
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    const now = Date.now();
+    if (now - this.lastTick < this.throttleMs) return;
+    this.lastTick = now;
+
+    const scrollPos = window.scrollY + window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+    const nearBottom = docHeight - scrollPos < 600;
+
+    if (nearBottom) {
+      const base = this.applyFilters(this.filteredProducts, this.selectedCategory, this.sortDir);
+      this.loadMore(base);
+    }
+  }
+
+  trackById(index: number, item: Product) { return item.id ?? index; }
 }

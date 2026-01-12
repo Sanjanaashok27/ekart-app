@@ -15,13 +15,19 @@ import { Product } from '../models/product';
 })
 export class Admin implements OnInit {
   products: Product[] = [];
+  filteredProducts: Product[] = [];
   allProducts: Product[] = [];
-  name = '';
-  price: any = '';
-  category = '';
-  description = '';
-  editing: Product | null = null;
   private apiItems: Product[] = [];
+
+  showAddModal = false;
+  showEditModal = false;
+
+  addForm = { name: '', price: null as number | null, category: '', description: '', image: '' as string };
+  editing: Product | null = null;
+
+  searchText = '';
+  private lastSearchTs = 0;
+  private debounceMs = 150;
 
   constructor(private productService: ProductService, private http: HttpClient) {}
 
@@ -34,8 +40,97 @@ export class Admin implements OnInit {
     });
   }
 
+  openAdd(): void {
+    this.addForm = { name: '', price: null, category: '', description: '', image: '' };
+    this.showAddModal = true;
+  }
+
+  closeAdd(): void {
+    this.showAddModal = false;
+  }
+
+  onImageSelected(evt: Event): void {
+    const input = evt.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => { this.addForm.image = reader.result as string; };
+    reader.readAsDataURL(file);
+  }
+
+  saveAdd(): void {
+    if (!this.addForm.name || this.addForm.price === null) return;
+    this.productService.add({
+      name: this.addForm.name.trim(),
+      price: Number(this.addForm.price),
+      category: this.addForm.category?.trim(),
+      description: this.addForm.description?.trim(),
+      image: this.addForm.image
+    });
+    this.closeAdd();
+    this.refresh();
+    this.recombine();
+  }
+
+  openEdit(p: Product): void {
+    this.editing = { ...p };
+    this.showEditModal = true;
+  }
+
+  closeEdit(): void {
+    this.showEditModal = false;
+    this.editing = null;
+  }
+
+  onEditImageSelected(evt: Event): void {
+    const input = evt.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file || !this.editing) return;
+    const reader = new FileReader();
+    reader.onload = () => { if (this.editing) this.editing.image = reader.result as string; };
+    reader.readAsDataURL(file);
+  }
+
+  saveEdit(): void {
+    if (!this.editing) return;
+    const { id, name, price, category, description, image } = this.editing;
+    this.productService.update(id, { name, price: Number(price), category, description, image });
+    this.closeEdit();
+    this.refresh();
+    this.recombine();
+  }
+
+  deleteProduct(id: number | string): void {
+    this.productService.delete(id);
+    alert("product deleted successfully")
+    this.refresh();
+    this.recombine();
+  }
+
   refresh(): void {
-    this.products = this.productService.getAll();
+    this.products = [...this.productService.getAll()].reverse();
+    this.applySearch();
+  }
+
+  onSearchInput(): void {
+    const now = Date.now();
+    if (now - this.lastSearchTs < this.debounceMs) return;
+    this.lastSearchTs = now;
+    this.applySearch();
+  }
+
+  private applySearch(): void {
+    const q = this.searchText.toLowerCase().trim();
+    if (!q) {
+      this.filteredProducts = [...this.products];
+      return;
+    }
+    this.filteredProducts = this.products.filter(p => {
+      const name = (p.name ?? p.title ?? '').toLowerCase();
+      const category = (p.category ?? p.department ?? '').toLowerCase();
+      const desc = (p.description ?? '').toLowerCase();
+      return name.includes(q) || category.includes(q) || desc.includes(q);
+    });
   }
 
   private loadApi(): void {
@@ -90,41 +185,5 @@ export class Admin implements OnInit {
   private recombine(): void {
     const local = this.productService.getAll();
     this.allProducts = [...this.apiItems, ...local];
-  }
-
-  addProduct(): void {
-    if (!this.name || !this.price) return;
-    this.productService.add({
-      name: this.name.trim(),
-      price: Number(this.price),
-      category: this.category?.trim(),
-      description: this.description?.trim()
-    });
-    this.name = '';
-    this.price = '';
-    this.category = '';
-    this.description = '';
-    this.refresh();
-    this.recombine();
-  }
-
-  editProduct(p: Product): void {
-    this.editing = { ...p };
-  }
-
-  saveEdit(): void {
-    if (this.editing) {
-      const { id, name, price, category, description } = this.editing;
-      this.productService.update(id, { name, price: Number(price), category, description });
-      this.editing = null;
-      this.refresh();
-      this.recombine();
-    }
-  }
-
-  deleteProduct(id: number | string): void {
-    this.productService.delete(id);
-    this.refresh();
-    this.recombine();
   }
 }

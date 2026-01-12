@@ -31,7 +31,6 @@ export class AuthService {
     }
   }
 
-  /** Returns the matched user or null */
   login(username: string, password: string): User | null {
     const user =
       this.USERS.find(u => u.username === username && u.password === password) || null;

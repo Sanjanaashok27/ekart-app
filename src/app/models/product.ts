@@ -14,5 +14,5 @@ export interface Product {
   productId?: string | number;
   sku?: string | number;
 
-  source: 'api' | 'local';
+  source: 'api' | 'local' | 'loop';
 }
