@@ -9,13 +9,44 @@ export class ProductService {
   private products: Product[] = [];
   private productsSubject = new BehaviorSubject<Product[]>([]);
   products$ = this.productsSubject.asObservable();
+  private storageMode: 'local' | 'session' | 'none' = 'local';
 
   constructor() {
-    const saved = localStorage.getItem(this.key);
-    this.products = saved ? JSON.parse(saved) : [
-      { id: Date.now(), name: 'Demo Product A', price: 999, category: 'General', source: 'local' },
-      { id: Date.now() + 1, name: 'Demo Product B', price: 1499, category: 'General', source: 'local' }
-    ];
+    // try localStorage, fall back to sessionStorage, otherwise use defaults
+    let raw: string | null = null;
+    try {
+      raw = localStorage.getItem(this.key);
+      if (raw) this.storageMode = 'local';
+      else {
+        raw = sessionStorage.getItem(this.key);
+        if (raw) this.storageMode = 'session';
+        else this.storageMode = 'local';
+      }
+    } catch (e) {
+      // reading storage failed (private mode, permission); fall back to session
+      try {
+        raw = sessionStorage.getItem(this.key);
+        if (raw) this.storageMode = 'session';
+        else this.storageMode = 'none';
+      } catch (_e) {
+        this.storageMode = 'none';
+      }
+    }
+
+    if (raw) {
+      try {
+        this.products = JSON.parse(raw) as Product[];
+      } catch (_e) {
+        this.products = [];
+      }
+    }
+
+    if (!this.products || this.products.length === 0) {
+      this.products = [
+        { id: Date.now(), name: 'Demo Product A', price: 999, category: 'General', source: 'local' },
+        { id: Date.now() + 1, name: 'Demo Product B', price: 1499, category: 'General', source: 'local' }
+      ];
+    }
     this.emit();
   }
 
@@ -43,7 +74,22 @@ export class ProductService {
   }
 
   private save(): void {
-    localStorage.setItem(this.key, JSON.stringify(this.products));
+    const payload = JSON.stringify(this.products);
+    // try localStorage first
+    try {
+      localStorage.setItem(this.key, payload);
+      this.storageMode = 'local';
+    } catch (e) {
+      // quota or other storage error - try sessionStorage
+      try {
+        sessionStorage.setItem(this.key, payload);
+        this.storageMode = 'session';
+      } catch (se) {
+        // give up persisting, keep in-memory only
+        this.storageMode = 'none';
+        console.warn('ProductService: failed to persist products to local/session storage, continuing in-memory only.', se);
+      }
+    }
     this.emit();
   }
 
